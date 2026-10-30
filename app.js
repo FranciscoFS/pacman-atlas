@@ -16,7 +16,7 @@ function perspective(aspect){const f=1/Math.tan(Math.PI/8),near=.1,far=30;return
 // Configuración de presentación: mismas paradas de color que las figuras finales.
 // Los límites se calculan desde los datos; no son umbrales de aceptación.
 const COLOR_CONFIG = Object.freeze({
-  receptor: {stops:['#08519C','#6BAED6','#FFFFFF'], range:'selected-region-min-max'},
+  receptor: {stops:['#08519C','#6BAED6','#FFFFFF'], range:'selected-region-min-max', logStrength:9},
   donor: {stops:['#FFFFFF','#FDAE6B','#A63603'], range:'selected-distribution-zero-max'},
 });
 function palette(stops,t){
@@ -27,6 +27,20 @@ function scaledColor(value,limits,stops){const span=limits[1]-limits[0];return p
 const bone=[.91,.875,.80];
 let data, vertices, triangles, selectedZone=7, selectedCell=null, receptorViewer, donorViewer, frequency, donorPeak=null;
 const colorLimits={receptor:[0,1],donor:[0,1]};
+let receptorContrast='log';
+function receptorColor(value){
+  const [lo,hi]=colorLimits.receptor,t=hi>lo?clamp((value-lo)/(hi-lo),0,1):0;
+  const a=COLOR_CONFIG.receptor.logStrength;
+  return palette(COLOR_CONFIG.receptor.stops,receptorContrast==='log'?Math.log1p(a*t)/Math.log1p(a):t);
+}
+function updateReceptorLegend(){
+  const [lo,hi]=colorLimits.receptor,a=COLOR_CONFIG.receptor.logStrength;
+  const middleFraction=receptorContrast==='log'?Math.expm1(.5*Math.log1p(a))/a:.5;
+  $('rmse-mid').textContent=`${fmt(lo+(hi-lo)*middleFraction)} mm`;
+  $('rmse-scale').textContent=receptorContrast==='log'
+    ?'RMSE · Contraste logarítmico ampliado · Escala por región'
+    :'RMSE · Contraste lineal · Escala por región';
+}
 
 class Viewer {
   constructor(id,view){
@@ -70,7 +84,7 @@ function colors(viewer){
     const cell=data.mesh.cells[i],z=data.mesh.zones[i];let col=bone;
     if(viewer.id==='receptor'){
       if(z===selectedZone&&Number.isFinite(data.grid.rmse[cell])&&data.grid.labels[cell]===z)
-        col=scaledColor(data.grid.rmse[cell],colorLimits.receptor,COLOR_CONFIG.receptor.stops);
+        col=receptorColor(data.grid.rmse[cell]);
       else if(DZ.includes(z))col=[.90,.875,.83];
     }else{
       if(z===selectedZone)col=[1,1,1];
@@ -94,7 +108,7 @@ function update(){
   $('rmse').textContent=fmt(rmse);
   $('rmse-min').textContent=`${fmt(colorLimits.receptor[0])} mm`;
   $('rmse-max').textContent=`${fmt(colorLimits.receptor[1])} mm`;
-  $('rmse-scale').textContent='RMSE · Azul intenso = menor error · Escala por región';
+  updateReceptorLegend();
   $('donor-min').textContent='0 %';
   $('donor-max').textContent=`${fmt(max,max<.01?5:3)} %`;
   $('donor-scale').textContent='Ganadores por celda · Naranja intenso = mayor frecuencia';
@@ -113,6 +127,7 @@ function setCamera(id,view){const v=id==='receptor'?receptorViewer:donorViewer;v
 for(const name of ['method','details']){$(name+'-open').onclick=()=>$(name+'-dialog').showModal();$(name+'-dialog').querySelector('.dialog-close').onclick=()=>$(name+'-dialog').close();$(name+'-dialog').querySelector('.dialog-close-action')?.addEventListener('click',()=>$(name+'-dialog').close())}
 document.querySelectorAll('[data-zone]').forEach(b=>b.onclick=()=>selectRegion(Number(b.dataset.zone)));
 $('reset-selection').onclick=()=>selectRegion(selectedZone);
+$('receptor-contrast').onchange=e=>{receptorContrast=e.target.value;if(data&&receptorViewer){updateReceptorLegend();colors(receptorViewer)}};
 document.querySelectorAll('.camera-controls button').forEach(b=>b.onclick=()=>setCamera(b.closest('[data-viewer]').dataset.viewer,b.dataset.view));
 async function init(){
   try{

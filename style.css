@@ -6,3 +6,9 @@
 /* Paletas de las figuras: azul bajo error; naranja alta frecuencia. */
 .viewer-card:nth-child(2) .gradient{background:linear-gradient(90deg,#fff,#fdae6b,#a63603)}
 .scale-note{grid-column:1/-1;margin:0;padding:10px 20px;border-top:1px solid var(--line);text-align:center;color:var(--muted);font-size:9px;background:#fbfcf9}
+/* Control de contraste receptor; los ticks conservan unidades físicas. */
+.contrast-control{display:flex;align-items:center;justify-content:center;gap:7px;font-size:9px;color:var(--muted);margin-bottom:9px}
+.contrast-control select{font:inherit;border:1px solid #d6e1de;background:#fafcf9;color:var(--ink);border-radius:5px;padding:3px 6px}
+.viewer-card:first-child .gradient{position:relative}
+.color-mid{position:absolute;top:7px;left:50%;transform:translateX(-50%);font-size:8px;white-space:nowrap;color:#71838a}
+.viewer-card:first-child .legend small{margin-top:17px}

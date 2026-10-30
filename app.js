@@ -13,10 +13,20 @@ function multiply(a,b){const c=new Float32Array(16);for(let j=0;j<4;j++)for(let 
 function transform(m,p){return [0,1,2,3].map(i=>m[i]*p[0]+m[4+i]*p[1]+m[8+i]*p[2]+m[12+i])}
 function lookAt(eye){const z=norm(eye),x=norm(cross([0,0,1],z)),y=cross(z,x);return new Float32Array([x[0],y[0],z[0],0,x[1],y[1],z[1],0,x[2],y[2],z[2],0,-dot(x,eye),-dot(y,eye),-dot(z,eye),1])}
 function perspective(aspect){const f=1/Math.tan(Math.PI/8),near=.1,far=30;return new Float32Array([f/aspect,0,0,0,0,f,0,0,0,0,(far+near)/(near-far),-1,0,0,2*far*near/(near-far),0])}
-function jet(t){return [clamp(1.5-Math.abs(4*t-3),0,1),clamp(1.5-Math.abs(4*t-2),0,1),clamp(1.5-Math.abs(4*t-1),0,1)]}
+// Configuración de presentación: mismas paradas de color que las figuras finales.
+// Los límites se calculan desde los datos; no son umbrales de aceptación.
+const COLOR_CONFIG = Object.freeze({
+  receptor: {stops:['#08519C','#6BAED6','#FFFFFF'], range:'selected-region-min-max'},
+  donor: {stops:['#FFFFFF','#FDAE6B','#A63603'], range:'selected-distribution-zero-max'},
+});
+function palette(stops,t){
+  const position=clamp(t,0,1)*(stops.length-1),i=Math.min(Math.floor(position),stops.length-2),mix=position-i;
+  return [1,3,5].map(k=>{const a=parseInt(stops[i].slice(k,k+2),16)/255,b=parseInt(stops[i+1].slice(k,k+2),16)/255;return a+(b-a)*mix});
+}
+function scaledColor(value,limits,stops){const span=limits[1]-limits[0];return palette(stops,span>0?(value-limits[0])/span:0)}
 const bone=[.91,.875,.80];
 let data, vertices, triangles, selectedZone=7, selectedCell=null, receptorViewer, donorViewer, frequency, donorPeak=null;
-let rmseCap=.2;
+const colorLimits={receptor:[0,1],donor:[0,1]};
 
 class Viewer {
   constructor(id,view){
@@ -54,7 +64,23 @@ class Viewer {
 
 // Gaussian display kernel in chart cells. Preserve total probability in each donor zone.
 function smoothOrigin(raw){const result=new Float32Array(raw.length),kernel=[.006,.061,.242,.382,.242,.061,.006];for(let a=0;a<231;a++)for(let x=0;x<100;x++){const i=a*100+x;if(!raw[i])continue;const z=data.grid.labels[i];if(!DZ.includes(z))continue;for(let da=-3;da<=3;da++)for(let dx=-3;dx<=3;dx++){const b=a+da,y=x+dx;if(b<0||b>=231||y<0||y>=100)continue;const j=b*100+y;if(data.grid.labels[j]===z)result[j]+=raw[i]*kernel[da+3]*kernel[dx+3]}}for(const z of DZ){let before=0,after=0;for(let i=0;i<raw.length;i++)if(data.grid.labels[i]===z){before+=raw[i];after+=result[i]}if(after)for(let i=0;i<raw.length;i++)if(data.grid.labels[i]===z)result[i]*=before/after}return result}
-function colors(viewer){const colors=[];for(let i=0;i<data.mesh.cells.length;i++){const cell=data.mesh.cells[i],z=data.mesh.zones[i];let col=bone;if(viewer.id==='receptor'){if(z===selectedZone&&data.grid.rmse[cell]!==null&&data.grid.labels[cell]===z)col=jet(clamp(data.grid.rmse[cell]/rmseCap,0,1));else if(DZ.includes(z))col=[.90,.875,.83]}else{if(z===selectedZone)col=[.74,.85,.88];if(DZ.includes(z)&&frequency[cell]>.00001&&data.grid.labels[cell]===z)col=jet(Math.log10(1+frequency[cell]/.001)/Math.log10(100001))}colors.push(col)}viewer.attribute('color',triangles.flatMap(i=>colors[i]));viewer.draw()}
+function colors(viewer){
+  const colors=[];
+  for(let i=0;i<data.mesh.cells.length;i++){
+    const cell=data.mesh.cells[i],z=data.mesh.zones[i];let col=bone;
+    if(viewer.id==='receptor'){
+      if(z===selectedZone&&Number.isFinite(data.grid.rmse[cell])&&data.grid.labels[cell]===z)
+        col=scaledColor(data.grid.rmse[cell],colorLimits.receptor,COLOR_CONFIG.receptor.stops);
+      else if(DZ.includes(z))col=[.90,.875,.83];
+    }else{
+      if(z===selectedZone)col=[1,1,1];
+      if(DZ.includes(z)&&data.grid.labels[cell]===z)
+        col=scaledColor(frequency[cell],colorLimits.donor,COLOR_CONFIG.donor.stops);
+    }
+    colors.push(col);
+  }
+  viewer.attribute('color',triangles.flatMap(i=>colors[i]));viewer.draw();
+}
 function update(){
   const region=data.regions[selectedZone],raw=new Float32Array(23100);let shares,rmse,n;
   document.querySelectorAll('[data-zone]').forEach(b=>{b.classList.toggle('active',Number(b.dataset.zone)===selectedZone);b.setAttribute('aria-pressed',String(Number(b.dataset.zone)===selectedZone))});
@@ -62,7 +88,16 @@ function update(){
   if(selectedCell!==null){const pairs=data.winners[selectedCell];n=data.grid.n[selectedCell];shares=DZ.map(()=>0);for(let i=0;i<pairs.length;i+=2){const cell=pairs[i],count=pairs[i+1];raw[cell]+=100*count/n;const zi=DZ.indexOf(data.grid.labels[cell]);if(zi>=0)shares[zi]+=100*count/n}rmse=data.grid.rmse[selectedCell];$('selection-kind').textContent=`Ubicación puntual · ${Math.floor(selectedCell/100)+20}° / ML ${fmt((selectedCell%100)/49.5-1,2)}`;$('variation').textContent=`DE entre fémures: ${fmt(data.grid.sd[selectedCell])} mm`;$('support').textContent=`${n} de 35 fémures válidos en esta ubicación. Un ganador por fémur.`;$('reset-selection').hidden=false;
   }else{raw.set(region.origin);shares=region.shares;rmse=region.rmse;$('selection-kind').textContent='Toda la región receptora';$('variation').textContent='Media de las medias individuales por fémur';$('support').textContent=`35 fémures · ${region.unique_receivers.toLocaleString('es-CL')} centros receptores únicos. Igual peso por fémur.`;$('reset-selection').hidden=true}
   frequency=smoothOrigin(raw);let max=0;donorPeak=null;for(let i=0;i<frequency.length;i++)if(DZ.includes(data.grid.labels[i])&&frequency[i]>max){max=frequency[i];donorPeak=i}
-  $('rmse').textContent=fmt(rmse);$('rmse-scale').textContent=`RMSE medio del mejor ajuste · escala común 0–${fmt(rmseCap,2)} mm`;
+  const regionalValues=data.grid.rmse.filter((value,i)=>data.grid.labels[i]===selectedZone&&Number.isFinite(value));
+  colorLimits.receptor=[Math.min(...regionalValues),Math.max(...regionalValues)];
+  colorLimits.donor=[0,max];
+  $('rmse').textContent=fmt(rmse);
+  $('rmse-min').textContent=`${fmt(colorLimits.receptor[0])} mm`;
+  $('rmse-max').textContent=`${fmt(colorLimits.receptor[1])} mm`;
+  $('rmse-scale').textContent='RMSE · Azul intenso = menor error · Escala por región';
+  $('donor-min').textContent='0 %';
+  $('donor-max').textContent=`${fmt(max,max<.01?5:3)} %`;
+  $('donor-scale').textContent='Ganadores por celda · Naranja intenso = mayor frecuencia';
   const ordered=DZ.map((z,i)=>({name:DN[i],long:LONG[i],share:shares[i]})).sort((a,b)=>b.share-a.share);
   $('donor-bars').replaceChildren(...ordered.map(item=>{const row=document.createElement('div');row.className='bar-row';row.title=item.long;const name=document.createElement('span');name.textContent=item.name;const track=document.createElement('div');track.className='bar-track';const fill=document.createElement('div');fill.className='bar-fill';fill.style.width=item.share+'%';track.append(fill);const val=document.createElement('span');val.className='bar-value';val.textContent=fmt(item.share,1);row.append(name,track,val);return row}));
   $('coordinates').textContent=selectedCell===null?'':$('selection-kind').textContent;
@@ -79,5 +114,17 @@ for(const name of ['method','details']){$(name+'-open').onclick=()=>$(name+'-dia
 document.querySelectorAll('[data-zone]').forEach(b=>b.onclick=()=>selectRegion(Number(b.dataset.zone)));
 $('reset-selection').onclick=()=>selectRegion(selectedZone);
 document.querySelectorAll('.camera-controls button').forEach(b=>b.onclick=()=>setCamera(b.closest('[data-viewer]').dataset.viewer,b.dataset.view));
-async function init(){try{const response=await fetch('assets/cohorte.json');if(!response.ok)throw Error('No fue posible cargar los datos de cohorte.');data=await response.json();triangles=data.mesh.triangles;const original=data.mesh.points;const min=[Infinity,Infinity,Infinity],max=[-Infinity,-Infinity,-Infinity];for(let i=0;i<original.length;i++){min[i%3]=Math.min(min[i%3],original[i]);max[i%3]=Math.max(max[i%3],original[i])}const center=min.map((v,i)=>(v+max[i])/2),scale=2/Math.max(...max.map((v,i)=>v-min[i]));vertices=original.map((v,i)=>(v-center[i%3])*scale);rmseCap=Math.ceil(Math.max(...data.grid.rmse.filter(v=>v!==null))*100)/100;receptorViewer=new Viewer('receptor','distal');donorViewer=new Viewer('donor','anterior');update();$('loading').hidden=true;$('workspace').setAttribute('aria-busy','false');window.atlasReady=true}catch(error){$('loading').hidden=false;$('loading').textContent=error.message;console.error(error)}}
+async function init(){
+  try{
+    const response=await fetch('assets/cohorte.json');
+    if(!response.ok)throw Error('No fue posible cargar los datos de cohorte.');
+    data=await response.json();triangles=data.mesh.triangles;
+    const original=data.mesh.points,min=[Infinity,Infinity,Infinity],max=[-Infinity,-Infinity,-Infinity];
+    for(let i=0;i<original.length;i++){min[i%3]=Math.min(min[i%3],original[i]);max[i%3]=Math.max(max[i%3],original[i])}
+    const center=min.map((v,i)=>(v+max[i])/2),scale=2/Math.max(...max.map((v,i)=>v-min[i]));
+    vertices=original.map((v,i)=>(v-center[i%3])*scale);
+    receptorViewer=new Viewer('receptor','distal');donorViewer=new Viewer('donor','anterior');
+    update();$('loading').hidden=true;$('workspace').setAttribute('aria-busy','false');window.atlasReady=true;
+  }catch(error){$('loading').hidden=false;$('loading').textContent=error.message;console.error(error)}
+}
 init();

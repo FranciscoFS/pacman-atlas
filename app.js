@@ -1,5 +1,9 @@
 // Visor WebGL autónomo: datos precalculados, sin dependencias externas.
 const $ = id => document.getElementById(id);
+function setTheme(dark){document.documentElement.dataset.theme=dark?"oscuro":"claro";$("theme-toggle").textContent=dark?"Modo claro":"Modo oscuro";$("theme-toggle").setAttribute("aria-pressed",String(dark));document.querySelector('meta[name="theme-color"]').content=dark?"#101c2c":"#f1f5f9";try{localStorage.setItem("pacman-theme",dark?"oscuro":"claro")}catch{}}
+let savedTheme="claro";try{savedTheme=localStorage.getItem("pacman-theme")||"claro"}catch{}
+setTheme(savedTheme==="oscuro");
+$("theme-toggle").onclick=()=>setTheme(document.documentElement.dataset.theme!=="oscuro");
 const RZ = [3, 7, 8, 9, 10], DZ = [1, 2, 4, 5, 6];
 const DN = ['LTR', 'MTR', 'LICN', 'MICN', 'CICN'];
 const LONG = ['Cresta troclear lateral', 'Cresta troclear medial', 'Escotadura lateral', 'Escotadura medial', 'Escotadura central'];
@@ -99,8 +103,8 @@ function update(){
   const region=data.regions[selectedZone],raw=new Float32Array(23100);let shares,rmse,n;
   document.querySelectorAll('[data-zone]').forEach(b=>{b.classList.toggle('active',Number(b.dataset.zone)===selectedZone);b.setAttribute('aria-pressed',String(Number(b.dataset.zone)===selectedZone))});
   $('receptor-title').textContent=region.name;$('selection-name').textContent=region.name;
-  if(selectedCell!==null){const pairs=data.winners[selectedCell];n=data.grid.n[selectedCell];shares=DZ.map(()=>0);for(let i=0;i<pairs.length;i+=2){const cell=pairs[i],count=pairs[i+1];raw[cell]+=100*count/n;const zi=DZ.indexOf(data.grid.labels[cell]);if(zi>=0)shares[zi]+=100*count/n}rmse=data.grid.rmse[selectedCell];$('selection-kind').textContent=`Ubicación puntual · ${Math.floor(selectedCell/100)+20}° / ML ${fmt((selectedCell%100)/49.5-1,2)}`;$('variation').textContent=`DE entre fémures: ${fmt(data.grid.sd[selectedCell])} mm`;$('support').textContent=`${n} de 35 fémures válidos en esta ubicación. Un ganador por fémur.`;$('reset-selection').hidden=false;
-  }else{raw.set(region.origin);shares=region.shares;rmse=region.rmse;$('selection-kind').textContent='Toda la región receptora';$('variation').textContent='Media de las medias individuales por fémur';$('support').textContent=`35 fémures · ${region.unique_receivers.toLocaleString('es-CL')} centros receptores únicos. Igual peso por fémur.`;$('reset-selection').hidden=true}
+  if(selectedCell!==null){const pairs=data.winners[selectedCell];n=data.grid.n[selectedCell];shares=DZ.map(()=>0);for(let i=0;i<pairs.length;i+=2){const cell=pairs[i],count=pairs[i+1];raw[cell]+=100*count/n;const zi=DZ.indexOf(data.grid.labels[cell]);if(zi>=0)shares[zi]+=100*count/n}rmse=data.grid.rmse[selectedCell];$('selection-kind').textContent=`Ubicación puntual · ${Math.floor(selectedCell/100)+20}° / ML ${fmt((selectedCell%100)/49.5-1,2)}`;$('reset-selection').hidden=false;
+  }else{raw.set(region.origin);shares=region.shares;rmse=region.rmse;$('selection-kind').textContent='Toda la región receptora';$('reset-selection').hidden=true}
   frequency=smoothOrigin(raw);let max=0;donorPeak=null;for(let i=0;i<frequency.length;i++)if(DZ.includes(data.grid.labels[i])&&frequency[i]>max){max=frequency[i];donorPeak=i}
   const regionalValues=data.grid.rmse.filter((value,i)=>data.grid.labels[i]===selectedZone&&Number.isFinite(value));
   colorLimits.receptor=[Math.min(...regionalValues),Math.max(...regionalValues)];
@@ -114,7 +118,6 @@ function update(){
   $('donor-scale').textContent='Ganadores por celda · Naranja intenso = mayor frecuencia';
   const ordered=DZ.map((z,i)=>({name:DN[i],long:LONG[i],share:shares[i]})).sort((a,b)=>b.share-a.share);
   $('donor-bars').replaceChildren(...ordered.map(item=>{const row=document.createElement('div');row.className='bar-row';row.title=item.long;const name=document.createElement('span');name.textContent=item.name;const track=document.createElement('div');track.className='bar-track';const fill=document.createElement('div');fill.className='bar-fill';fill.style.width=item.share+'%';track.append(fill);const val=document.createElement('span');val.className='bar-value';val.textContent=fmt(item.share,1);row.append(name,track,val);return row}));
-  $('coordinates').textContent=selectedCell===null?'':$('selection-kind').textContent;
   $('selection-kind').textContent=selectedCell===null?'Toda la región':'Ubicación seleccionada en el modelo';
   const publicNames={LTR:'Cresta lateral',MTR:'Cresta medial',LICN:'Escotadura lateral',MICN:'Escotadura medial',CICN:'Escotadura central'};
   document.querySelectorAll('.bar-row').forEach((row,i)=>{row.firstElementChild.textContent=publicNames[ordered[i].name]});

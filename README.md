@@ -2,6 +2,10 @@
 
 ## Rama de prueba: publico-limpio
 
+Alternativa oscura local: botón de cabecera alterna claro/oscuro y recuerda preferencia en localStorage; mapa/iluminación/cálculos se conservan. Tema noche #101c2c. Datos del estudio reducido a explicación general de cohorte y mapas. Pendiente sincronizar estos ajustes locales con GitHub.
+
+Prueba local de paleta30/10: fondo gris frío #f1f5f9, texto azul oscuro; colores de mapas intactos. Variables al inicio de style.css; paleta anterior conservada mediante html[data-theme="marfil"]. Botón de quitar punto ahora junto al estado del receptor. Estos dos ajustes locales aún no sincronizados con GitHub.
+
 Pasada de legibilidad tras auditoría (30/10): CSS consolidado, leyendas13px, controles de cámara/zoom44px y texto secundario #4d6570. Resumen de receptor/RMSE/origen antes de los modelos; zoom explícito +/− en ambas superficies. Escena abierta y selector móvil conservados. QA1440×900/390×844 sin desborde horizontal; resumen dentro del primer pantallazo, selección regional, contraste, zoom, cámaras, distribución y diálogo funcionales; consola sin errores. Datos y cálculos conservados. Preview http://localhost:8092/; producción sigue en main.
 
 Diseño de escena abierta (30/10): se eliminan tarjetas y divisores entre modelos, se compactan título/cabecera y las superficies ocupan una escena de hasta65vh en escritorio. Cámara inicial3,2 con ajuste por aspect ratio para evitar recortes al estrechar la ventana; proporciones físicas conservadas. Pantallas≤850px usan selector Receptor/Donantes con un modelo a ancho completo. Resumen numérico en una franja; barras bajo Ver distribución de los donantes, plegado inicialmente. Método/datos accesibles desde cabecera. QA: PMFC0,092mm, acordeón y modal funcionales,390px sin desborde/un modelo visible, selector cambia superficie y mantiene resultados; clic puntual en ventana normal0,102mm. Consola sin errores.

@@ -127,6 +127,12 @@ function setCamera(id,view){const v=id==='receptor'?receptorViewer:donorViewer;v
 for(const name of ['method','details']){$(name+'-open').onclick=()=>$(name+'-dialog').showModal();$(name+'-dialog').querySelector('.dialog-close').onclick=()=>$(name+'-dialog').close();$(name+'-dialog').querySelector('.dialog-close-action')?.addEventListener('click',()=>$(name+'-dialog').close())}
 document.querySelectorAll('[data-zone]').forEach(b=>b.onclick=()=>selectRegion(Number(b.dataset.zone)));
 $('reset-selection').onclick=()=>selectRegion(selectedZone);
+document.querySelectorAll('button[data-zoom]').forEach(button=>button.onclick=()=>{
+  const viewer=button.dataset.viewer==='receptor'?receptorViewer:donorViewer;
+  if(!viewer)return;
+  viewer.distance=clamp(viewer.distance*(button.dataset.zoom==='in'?.85:1/.85),1.4,8);
+  viewer.draw();
+});
 document.querySelectorAll('button[data-model-view]').forEach(button=>button.onclick=()=>{
   $('workspace').dataset.modelView=button.dataset.modelView;
   document.querySelectorAll('button[data-model-view]').forEach(item=>{

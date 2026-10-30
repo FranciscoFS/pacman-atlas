@@ -65,7 +65,11 @@ function update(){
   $('rmse').textContent=fmt(rmse);$('rmse-scale').textContent=`RMSE medio del mejor ajuste · escala común 0–${fmt(rmseCap,2)} mm`;
   const ordered=DZ.map((z,i)=>({name:DN[i],long:LONG[i],share:shares[i]})).sort((a,b)=>b.share-a.share);
   $('donor-bars').replaceChildren(...ordered.map(item=>{const row=document.createElement('div');row.className='bar-row';row.title=item.long;const name=document.createElement('span');name.textContent=item.name;const track=document.createElement('div');track.className='bar-track';const fill=document.createElement('div');fill.className='bar-fill';fill.style.width=item.share+'%';track.append(fill);const val=document.createElement('span');val.className='bar-value';val.textContent=fmt(item.share,1);row.append(name,track,val);return row}));
-  $('top-donor').textContent=`${ordered[0].name} · ${ordered[0].long}`;
+  $('coordinates').textContent=selectedCell===null?'':$('selection-kind').textContent;
+  $('selection-kind').textContent=selectedCell===null?'Toda la región':'Ubicación seleccionada en el modelo';
+  const publicNames={LTR:'Cresta lateral',MTR:'Cresta medial',LICN:'Escotadura lateral',MICN:'Escotadura medial',CICN:'Escotadura central'};
+  document.querySelectorAll('.bar-row').forEach((row,i)=>{row.firstElementChild.textContent=publicNames[ordered[i].name]});
+  $('top-donor').textContent=ordered[0].long;
   colors(receptorViewer);colors(donorViewer);
   window.atlasState={zone:selectedZone,cell:selectedCell,rmse,n:selectedCell===null?35:n,shares,total:shares.reduce((a,b)=>a+b,0),frequencyMass:frequency.reduce((a,b)=>a+b,0),donorPeak};
 }

@@ -1,7 +1,7 @@
 // Visor WebGL autónomo: datos precalculados, sin dependencias externas.
 const $ = id => document.getElementById(id);
-function setTheme(dark){document.documentElement.dataset.theme=dark?"oscuro":"claro";$("theme-toggle").textContent=dark?"Modo claro":"Modo oscuro";$("theme-toggle").setAttribute("aria-pressed",String(dark));document.querySelector('meta[name="theme-color"]').content=dark?"#101c2c":"#f1f5f9";try{localStorage.setItem("pacman-theme",dark?"oscuro":"claro")}catch{}}
-let savedTheme="claro";try{savedTheme=localStorage.getItem("pacman-theme")||"claro"}catch{}
+function setTheme(dark){document.documentElement.dataset.theme=dark?"oscuro":"claro";$("theme-toggle").textContent=dark?"Modo claro":"Modo oscuro";$("theme-toggle").setAttribute("aria-pressed",String(dark));document.querySelector('meta[name="theme-color"]').content=dark?"#101c2c":"#f1f5f9";try{localStorage.setItem("pacman-immersive-theme",dark?"oscuro":"claro")}catch{}}
+let savedTheme="oscuro";try{savedTheme=localStorage.getItem("pacman-immersive-theme")||"oscuro"}catch{}
 setTheme(savedTheme==="oscuro");
 $("theme-toggle").onclick=()=>setTheme(document.documentElement.dataset.theme!=="oscuro");
 const RZ = [3, 7, 8, 9, 10], DZ = [1, 2, 4, 5, 6];
@@ -95,7 +95,7 @@ function colors(viewer){
       if(DZ.includes(z)&&data.grid.labels[cell]===z)
         col=scaledColor(frequency[cell],colorLimits.donor,COLOR_CONFIG.donor.stops);
     }
-    colors.push(col);
+    colors.push($('map-toggle').getAttribute('aria-pressed')==='true'?col:bone);
   }
   viewer.attribute('color',triangles.flatMap(i=>colors[i]));viewer.draw();
 }
@@ -132,6 +132,8 @@ for(const name of ['method','details']){$(name+'-open').onclick=()=>$(name+'-dia
 document.querySelectorAll('[data-zone]').forEach(b=>b.onclick=()=>selectRegion(Number(b.dataset.zone)));
 $('reset-selection').onclick=()=>selectRegion(selectedZone);
 $('region-select').onchange=e=>selectRegion(Number(e.target.value));
+$('map-toggle').onclick=()=>{const b=$('map-toggle');b.setAttribute('aria-pressed',String(b.getAttribute('aria-pressed')!=='true'));document.body.classList.toggle('hide-map',b.getAttribute('aria-pressed')!=='true');if(receptorViewer){colors(receptorViewer);colors(donorViewer)}};
+$('marker-toggle').onclick=()=>{const b=$('marker-toggle'),shown=b.getAttribute('aria-pressed')!=='true';b.setAttribute('aria-pressed',String(shown));document.body.classList.toggle('hide-markers',!shown)};
 document.querySelectorAll('button[data-zoom]').forEach(button=>button.onclick=()=>{
   const viewer=button.dataset.viewer==='receptor'?receptorViewer:donorViewer;
   if(!viewer)return;
@@ -140,6 +142,7 @@ document.querySelectorAll('button[data-zoom]').forEach(button=>button.onclick=()
 });
 document.querySelectorAll('button[data-model-view]').forEach(button=>button.onclick=()=>{
   $('workspace').dataset.modelView=button.dataset.modelView;
+  $('map-toggle').textContent=button.dataset.modelView==='donor'?'Mapa de origen':'Mapa de ajuste';
   document.querySelectorAll('button[data-model-view]').forEach(item=>{
     const active=item===button;item.classList.toggle('active',active);item.setAttribute('aria-pressed',String(active));
   });

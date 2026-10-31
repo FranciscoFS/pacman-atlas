@@ -1,5 +1,13 @@
 # pacman-atlas
 
+## Prototipo inmersivo — 31/10/2026
+
+Rama local prueba-inmersiva, worktree oats_demo/inmersivo. Preview http://localhost:8094/ (servidor Node). Base pública9cc0035 preservada; esta variante no se publica en Pages.
+
+Una escena 3D con selector receptor/donantes, región y controles flotantes; tema oscuro inicial con preferencia propia. Capas de mapa y marcadores activables. Resultados, datos y ranking originales; sin transparencia ni nuevas geometrías/parches en esta primera variante. CSS específico en inmersivo.css.
+
+QA1440×900,390×844 y360×740: modelos, selector región, capas, tema, distribución y selección puntual→quitar selección verificados; DLFC0,104, DMFC0,099 y puntoDLFC0,103mm. Consola sin errores y sintaxisJS verificada. La geometría no se deforma; es el mismo visor y mismo dataset.
+
 ## Rama de prueba: publico-limpio
 
 Alternativa oscura local: botón de cabecera alterna claro/oscuro y recuerda preferencia en localStorage; mapa/iluminación/cálculos se conservan. Tema noche #101c2c. Datos del estudio reducido a explicación general de cohorte y mapas. Pendiente sincronizar estos ajustes locales con GitHub.

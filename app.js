@@ -150,7 +150,8 @@ document.querySelectorAll('[data-zone]').forEach(b=>b.onclick=()=>selectRegion(N
 $('reset-selection').onclick=()=>selectRegion(selectedZone);
 $('region-select').onchange=e=>selectRegion(Number(e.target.value));
 $('palette-select').onchange=()=>{updatePaletteLegend();if(receptorViewer){colors(receptorViewer);colors(donorViewer)}};
-document.querySelectorAll('[data-layout]').forEach(button=>button.onclick=()=>{
+// Solo los botones cambian el diseño; workspace/body también llevan data-layout.
+document.querySelectorAll('button[data-layout]').forEach(button=>button.onclick=()=>{
   $('workspace').dataset.layout=button.dataset.layout;
   document.body.dataset.layout=button.dataset.layout;
   const dual=button.dataset.layout==='dual';
@@ -159,7 +160,7 @@ document.querySelectorAll('[data-layout]').forEach(button=>button.onclick=()=>{
     (dual?$('shared-legends'):document.querySelector('.'+kind+'-viewer .viewer-bottom')).append(legend);
   }
   $('map-toggle').textContent=dual?'Mapas':($('workspace').dataset.modelView==='donor'?'Mapa de origen':'Mapa de ajuste');
-  document.querySelectorAll('[data-layout]').forEach(b=>{const active=b===button;b.classList.toggle('active',active);b.setAttribute('aria-pressed',String(active))});
+  document.querySelectorAll('button[data-layout]').forEach(b=>{const active=b===button;b.classList.toggle('active',active);b.setAttribute('aria-pressed',String(active))});
   if(receptorViewer){receptorViewer.draw();donorViewer.draw()}
 });
 $('shared-view').onchange=e=>{

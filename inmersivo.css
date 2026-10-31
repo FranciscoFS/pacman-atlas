@@ -29,7 +29,7 @@ body[data-layout="dual"] #shared-legends{display:flex;position:fixed;bottom:150p
 #workspace[data-layout="dual"] .canvas-help{display:none}
 @media(min-width:851px){body[data-layout="dual"] .scene-label{display:none}body[data-layout="dual"] .regions{top:100px}body[data-layout="dual"] .layout-controls{top:200px}#workspace[data-layout="dual"] .viewer-card{bottom:245px}.zoom-controls{top:200px}}
 :root[data-theme="claro"]{--glass:#f1f5f9f5;--edge:#183b4926}
-html,body{height:100%;overflow:hidden}.hide-map .legend{visibility:hidden}
+html,body{height:100%;overflow:hidden}.hide-map .legend{display:none}.hide-map #shared-legends{display:none!important}
 header{position:fixed;inset:0 0 auto;max-width:none;height:68px;min-height:0;padding:12px 28px;border:0;z-index:5;background:var(--surface);flex-wrap:nowrap}
 .brand{font-size:17px}.brand small{font-size:9px}.header-links{width:auto;gap:8px}.header-links button{font-size:13px;white-space:nowrap}#details-open{font-size:13px}#details-open::after{content:none}
 main{max-width:none;padding:0;height:100svh}

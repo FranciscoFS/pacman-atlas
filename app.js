@@ -28,6 +28,20 @@ function palette(stops,t){
   return [1,3,5].map(k=>{const a=parseInt(stops[i].slice(k,k+2),16)/255,b=parseInt(stops[i+1].slice(k,k+2),16)/255;return a+(b-a)*mix});
 }
 function scaledColor(value,limits,stops){const span=limits[1]-limits[0];return palette(stops,span>0?(value-limits[0])/span:0)}
+// Jet y Blue–White–Red se muestrean en la misma función para malla y leyenda.
+function mapColor(kind,t){
+  t=clamp(t,0,1);const mode=$('palette-select').value;
+  if(mode==='jet')return [3,2,1].map(k=>clamp(1.5-Math.abs(4*t-k),0,1));
+  if(mode==='bwr')return palette(['#0000ff','#ffffff','#ff0000'],t);
+  return palette(COLOR_CONFIG[kind].stops,t);
+}
+function updatePaletteLegend(){
+  for(const kind of ['receptor','donor']){
+    const stops=Array.from({length:65},(_,i)=>{const c=mapColor(kind,i/64).map(v=>Math.round(v*255));return 'rgb('+c.join(',')+') '+i/64*100+'%'});
+    document.querySelector('.'+kind+'-legend .gradient').style.background='linear-gradient(90deg,'+stops.join(',')+')';
+  }
+  $('donor-scale').textContent='Ganadores por celda · Menor → mayor frecuencia';
+}
 const bone=[.91,.875,.80];
 let data, vertices, triangles, selectedZone=7, selectedCell=null, receptorViewer, donorViewer, frequency, donorPeak=null;
 const colorLimits={receptor:[0,1],donor:[0,1]};
@@ -35,7 +49,7 @@ let receptorContrast='log';
 function receptorColor(value){
   const [lo,hi]=colorLimits.receptor,t=hi>lo?clamp((value-lo)/(hi-lo),0,1):0;
   const a=COLOR_CONFIG.receptor.logStrength;
-  return palette(COLOR_CONFIG.receptor.stops,receptorContrast==='log'?Math.log1p(a*t)/Math.log1p(a):t);
+  return mapColor('receptor',receptorContrast==='log'?Math.log1p(a*t)/Math.log1p(a):t);
 }
 function updateReceptorLegend(){
   const [lo,hi]=colorLimits.receptor,a=COLOR_CONFIG.receptor.logStrength;
@@ -93,7 +107,7 @@ function colors(viewer){
     }else{
       if(z===selectedZone)col=[1,1,1];
       if(DZ.includes(z)&&data.grid.labels[cell]===z)
-        col=scaledColor(frequency[cell],colorLimits.donor,COLOR_CONFIG.donor.stops);
+        col=mapColor('donor',colorLimits.donor[1]>0?frequency[cell]/colorLimits.donor[1]:0);
     }
     colors.push($('map-toggle').getAttribute('aria-pressed')==='true'?col:bone);
   }
@@ -116,7 +130,7 @@ function update(){
   updateReceptorLegend();
   $('donor-min').textContent='0 %';
   $('donor-max').textContent=`${fmt(max,max<.01?5:3)} %`;
-  $('donor-scale').textContent='Ganadores por celda · Naranja intenso = mayor frecuencia';
+  updatePaletteLegend();
   const ordered=DZ.map((z,i)=>({name:DN[i],long:LONG[i],share:shares[i]})).sort((a,b)=>b.share-a.share);
   $('donor-bars').replaceChildren(...ordered.map(item=>{const row=document.createElement('div');row.className='bar-row';row.title=item.long;const name=document.createElement('span');name.textContent=item.name;const track=document.createElement('div');track.className='bar-track';const fill=document.createElement('div');fill.className='bar-fill';fill.style.width=item.share+'%';track.append(fill);const val=document.createElement('span');val.className='bar-value';val.textContent=fmt(item.share,1);row.append(name,track,val);return row}));
   $('selection-kind').textContent=selectedCell===null?'Toda la región':'Ubicación seleccionada en el modelo';
@@ -126,12 +140,34 @@ function update(){
   colors(receptorViewer);colors(donorViewer);
   window.atlasState={zone:selectedZone,cell:selectedCell,rmse,n:selectedCell===null?35:n,shares,total:shares.reduce((a,b)=>a+b,0),frequencyMass:frequency.reduce((a,b)=>a+b,0),donorPeak};
 }
-function selectRegion(zone){selectedZone=zone;selectedCell=null;update();const view=zone===9||zone===10?'posterior':zone===3?'anterior':'distal';setCamera('receptor',view)}
+function selectRegion(zone){selectedZone=zone;selectedCell=null;update();const shared=$('workspace').dataset.layout==='dual'&&$('shared-view').value!=='initial'?$('shared-view').value:null;const view=shared||(zone===9||zone===10?'posterior':zone===3?'anterior':'distal');setCamera('receptor',view);if(shared)setCamera('donor',shared)}
 function setCamera(id,view){const v=id==='receptor'?receptorViewer:donorViewer;v.setView(view==='reset'?(id==='donor'?'anterior':'distal'):view);document.querySelectorAll(`[data-viewer="${id}"] button`).forEach(b=>b.classList.toggle('active',b.dataset.view===view))}
 for(const name of ['method','details']){$(name+'-open').onclick=()=>$(name+'-dialog').showModal();$(name+'-dialog').querySelector('.dialog-close').onclick=()=>$(name+'-dialog').close();$(name+'-dialog').querySelector('.dialog-close-action')?.addEventListener('click',()=>$(name+'-dialog').close())}
 document.querySelectorAll('[data-zone]').forEach(b=>b.onclick=()=>selectRegion(Number(b.dataset.zone)));
 $('reset-selection').onclick=()=>selectRegion(selectedZone);
 $('region-select').onchange=e=>selectRegion(Number(e.target.value));
+$('palette-select').onchange=()=>{updatePaletteLegend();if(receptorViewer){colors(receptorViewer);colors(donorViewer)}};
+document.querySelectorAll('[data-layout]').forEach(button=>button.onclick=()=>{
+  $('workspace').dataset.layout=button.dataset.layout;
+  document.body.dataset.layout=button.dataset.layout;
+  const dual=button.dataset.layout==='dual';
+  for(const kind of ['receptor','donor']){
+    const legend=document.querySelector('.'+kind+'-legend');
+    (dual?$('shared-legends'):document.querySelector('.'+kind+'-viewer .viewer-bottom')).append(legend);
+  }
+  $('map-toggle').textContent=dual?'Mapas':($('workspace').dataset.modelView==='donor'?'Mapa de origen':'Mapa de ajuste');
+  document.querySelectorAll('[data-layout]').forEach(b=>{const active=b===button;b.classList.toggle('active',active);b.setAttribute('aria-pressed',String(active))});
+  if(receptorViewer){receptorViewer.draw();donorViewer.draw()}
+});
+$('shared-view').onchange=e=>{
+  if(!receptorViewer)return;
+  if(e.target.value==='initial'){setCamera('receptor',selectedZone===9||selectedZone===10?'posterior':selectedZone===3?'anterior':'distal');setCamera('donor','anterior')}
+  else{setCamera('receptor',e.target.value);setCamera('donor',e.target.value)}
+};
+for(const [id,factor] of [['shared-zoom-in',.85],['shared-zoom-out',1/.85]])$(id).onclick=()=>{
+  if(!receptorViewer)return;for(const v of [receptorViewer,donorViewer]){v.distance=clamp(v.distance*factor,1.4,8);v.draw()}
+};
+$('shared-reset').onclick=()=>{if(!receptorViewer)return;setCamera('receptor',selectedZone===9||selectedZone===10?'posterior':selectedZone===3?'anterior':'distal');setCamera('donor','anterior');$('shared-view').value='initial'};
 $('map-toggle').onclick=()=>{const b=$('map-toggle');b.setAttribute('aria-pressed',String(b.getAttribute('aria-pressed')!=='true'));document.body.classList.toggle('hide-map',b.getAttribute('aria-pressed')!=='true');if(receptorViewer){colors(receptorViewer);colors(donorViewer)}};
 $('marker-toggle').onclick=()=>{const b=$('marker-toggle'),shown=b.getAttribute('aria-pressed')!=='true';b.setAttribute('aria-pressed',String(shown));document.body.classList.toggle('hide-markers',!shown)};
 document.querySelectorAll('button[data-zoom]').forEach(button=>button.onclick=()=>{

@@ -1,6 +1,8 @@
 # pacman-atlas
 
-## Prototipo inmersivo — 31/10/2026
+## Atlas inmersivo — 31/10/2026
+
+Versión aprobada para publicación en https://franciscofs.github.io/pacman-atlas/, desde main/raíz. Se conserva la anterior en publica-movil-v1 y esta entrega en inmersiva-v1. Vista1/2modelos, controles comunes y paletas original/Jet/Blue–White–Red. Las notas siguientes registran las pruebas previas a la publicación.
 
 Auditoría de regresiones: corregido selector de eventos de1/2modelos, que también capturaba workspace[data-layout] al hacer clic en distribución/controles descendientes y aplicaba .active al fondo. Ahora se vincula solo a button[data-layout]. Ocultar mapas elimina también la ventana compartida de escalas, sin contenedor vacío. QA32combinaciones (1440×900/390×844 ×claro/oscuro ×1/2modelos ×mapas on/off ×distribución abierta/cerrada) +12depaletas/regiones: sin fallos. Evidencia ../qa_inmersivo_regresiones.json y ../inmersivo_bugs_corregidos.png. Sin errores de consola; prueba local, Pages intacto.
 
@@ -8,7 +10,7 @@ Tercera pasada: modelos sobre fondo completo, sin recorte por mitad o por tarjet
 
 Segunda pasada: selector1/2 modelos simultáneos, con cámara/vista/zoom/reset comunes en modo doble; se ocultan pestañas y controles duplicados. Capas y paleta compartidas. Paletas original, Jet continuo y Blue–White–Red (azul–blanco–rojo), con leyendas generadas por la misma función del mapa. Dos escalas agrupadas (RMSEmm y frecuencia%), datos/contraste/rangos intactos. Al volver a uno se restauran sus controles y leyendas. QA1440×900/390×844/360×740, regiones, cámaras, paletas y retorno1/2; sin erroresJS ni overflow. No publicado.
 
-Rama local prueba-inmersiva, worktree oats_demo/inmersivo. Preview http://localhost:8094/ (servidor Node). Base pública9cc0035 preservada; esta variante no se publica en Pages.
+Rama de desarrollo prueba-inmersiva, worktree oats_demo/inmersivo. Preview http://localhost:8094/ (servidor Node). Base pública9cc0035 preservada con etiqueta publica-movil-v1.
 
 Una escena 3D con selector receptor/donantes, región y controles flotantes; tema oscuro inicial con preferencia propia. Capas de mapa y marcadores activables. Resultados, datos y ranking originales; sin transparencia ni nuevas geometrías/parches en esta primera variante. CSS específico en inmersivo.css.
 

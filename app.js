@@ -100,6 +100,7 @@ function colors(viewer){
   viewer.attribute('color',triangles.flatMap(i=>colors[i]));viewer.draw();
 }
 function update(){
+  $('region-select').value=String(selectedZone);
   const region=data.regions[selectedZone],raw=new Float32Array(23100);let shares,rmse,n;
   document.querySelectorAll('[data-zone]').forEach(b=>{b.classList.toggle('active',Number(b.dataset.zone)===selectedZone);b.setAttribute('aria-pressed',String(Number(b.dataset.zone)===selectedZone))});
   $('receptor-title').textContent=region.name;$('selection-name').textContent=region.name;
@@ -130,6 +131,7 @@ function setCamera(id,view){const v=id==='receptor'?receptorViewer:donorViewer;v
 for(const name of ['method','details']){$(name+'-open').onclick=()=>$(name+'-dialog').showModal();$(name+'-dialog').querySelector('.dialog-close').onclick=()=>$(name+'-dialog').close();$(name+'-dialog').querySelector('.dialog-close-action')?.addEventListener('click',()=>$(name+'-dialog').close())}
 document.querySelectorAll('[data-zone]').forEach(b=>b.onclick=()=>selectRegion(Number(b.dataset.zone)));
 $('reset-selection').onclick=()=>selectRegion(selectedZone);
+$('region-select').onchange=e=>selectRegion(Number(e.target.value));
 document.querySelectorAll('button[data-zoom]').forEach(button=>button.onclick=()=>{
   const viewer=button.dataset.viewer==='receptor'?receptorViewer:donorViewer;
   if(!viewer)return;

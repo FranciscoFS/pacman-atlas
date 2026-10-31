@@ -1,4 +1,10 @@
 /* Variante experimental: escena completa con controles flotantes. */
+#scene-input{position:fixed;inset:0;z-index:1;touch-action:none;cursor:grab;user-select:none}#scene-input:active{cursor:grabbing}
+#workspace[data-model-view] .viewer-card{position:absolute;inset:0;width:100%;height:100svh;pointer-events:none}
+#workspace[data-model-view] .viewer-card .canvas-wrap{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+#workspace canvas{position:absolute;inset:0;z-index:0;pointer-events:none}
+#workspace .marker{z-index:2}#workspace .view-label{z-index:2;pointer-events:none}
+#workspace .viewer-bottom{z-index:4}#workspace .zoom-controls{z-index:4;pointer-events:auto}
 :root{--glass:#152433ed;--edge:#ffffff20}
 .shared-camera,#shared-legends{display:none}
 body[data-layout="dual"] .view-switch{display:none}
@@ -66,4 +72,22 @@ main{max-width:none;padding:0;height:100svh}
  #shared-legends .receptor-legend::before,#shared-legends .donor-legend::before{font-size:10px}
  #shared-legends .legend{width:calc(50% - 8px)}
 }
-@media(max-height:700px) and (max-width:850px){.regions{top:66px}.view-switch,.layout-controls{top:120px}.layer-tools{top:171px}.viewer-card{top:164px;bottom:220px}.viewer-bottom{bottom:160px}.distribution{bottom:207px}#workspace[data-layout="dual"] .viewer-card{top:220px;bottom:215px}body[data-layout="dual"] .layout-controls,body[data-layout="dual"] .shared-camera{top:120px}}
+@media(max-height:700px) and (max-width:850px){.regions{top:66px}.view-switch,.layout-controls{top:120px}.layer-tools{top:171px}.viewer-card{top:164px;bottom:220px}.viewer-bottom{bottom:160px}.distribution{bottom:207px}body[data-layout="dual"] .layout-controls,body[data-layout="dual"] .shared-camera{top:120px}}
+/* Los dos lienzos cubren el mismo fondo; solo cambia la posición proyectada. */
+#workspace[data-layout][data-model-view] .viewer-card{position:absolute;inset:0;width:100%;height:100svh}
+#workspace[data-layout][data-model-view] .viewer-card .canvas-wrap{inset:0;width:100%;height:100%}
+#workspace .view-label{position:absolute;top:192px;left:50%;transform:translateX(-50%);background:var(--glass);border-radius:6px;padding:2px 8px}
+#workspace[data-layout="dual"] .card-heading{top:160px;left:25%;transform:translateX(-50%);background:var(--glass);border-radius:8px;padding:4px 10px;min-height:0}
+#workspace[data-layout="dual"] .donor-viewer .card-heading{left:75%}
+#workspace[data-layout="dual"] .view-label{top:202px;left:25%}
+#workspace[data-layout="dual"] .donor-viewer .view-label{left:75%}
+#workspace .canvas-help{bottom:170px;pointer-events:none}
+#workspace[data-layout="single"] .zoom-controls{top:350px}
+@media(max-width:850px){
+ #workspace .view-label{top:240px;left:20px;transform:none}
+ #workspace[data-layout="single"] .zoom-controls{top:240px}
+ #workspace[data-layout="dual"] .card-heading{top:248px;left:25%;transform:translateX(-50%)}
+ #workspace[data-layout="dual"] .donor-viewer .card-heading{left:75%}
+ #workspace[data-layout="dual"] .view-label{top:285px;left:25%;transform:translateX(-50%)}
+ #workspace[data-layout="dual"] .donor-viewer .view-label{left:75%}
+}

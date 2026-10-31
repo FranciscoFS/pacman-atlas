@@ -85,10 +85,13 @@ class Viewer {
   }
   attribute(name,values){const gl=this.gl;gl.useProgram(this.program);if(!this.buffers[name])this.buffers[name]=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,this.buffers[name]);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(values),gl.STATIC_DRAW);const loc=gl.getAttribLocation(this.program,name);gl.enableVertexAttribArray(loc);gl.vertexAttribPointer(loc,3,gl.FLOAT,false,0,0)}
   setView(view){this.yaw=view==='posterior'?Math.PI:0;this.pitch=view==='distal'?-1.52:.04;this.distance=3.2;this.draw();const label={anterior:'Vista anterior',distal:'Vista distal',posterior:'Vista posterior'};$(this.id+'-view-label').textContent=label[view]||'Vista libre'}
-  draw(){if(!this.gl)return;const gl=this.gl,dpr=Math.min(devicePixelRatio||1,2),w=this.canvas.clientWidth,h=this.canvas.clientHeight;if(!w||!h)return;this.canvas.width=w*dpr;this.canvas.height=h*dpr;gl.viewport(0,0,this.canvas.width,this.canvas.height);gl.clearColor(0,0,0,0);gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);gl.enable(gl.DEPTH_TEST);gl.disable(gl.CULL_FACE);gl.useProgram(this.program);const fittedDistance=this.distance*Math.max(1,.85*h/w);const eye=[Math.sin(this.yaw)*Math.cos(this.pitch)*fittedDistance,Math.cos(this.yaw)*Math.cos(this.pitch)*fittedDistance,Math.sin(this.pitch)*fittedDistance];this.eye=eye;this.view=lookAt(eye);this.mvp=multiply(perspective(w/h),this.view);gl.uniformMatrix4fv(gl.getUniformLocation(this.program,'mvp'),false,this.mvp);gl.uniformMatrix4fv(gl.getUniformLocation(this.program,'view'),false,this.view);gl.drawArrays(gl.TRIANGLES,0,triangles.length);this.marker()}
+  draw(){if(!this.gl)return;const gl=this.gl,dpr=Math.min(devicePixelRatio||1,2),w=this.canvas.clientWidth,h=this.canvas.clientHeight;if(!w||!h)return;this.canvas.width=w*dpr;this.canvas.height=h*dpr;gl.viewport(0,0,this.canvas.width,this.canvas.height);gl.clearColor(0,0,0,0);gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);gl.enable(gl.DEPTH_TEST);gl.disable(gl.CULL_FACE);gl.useProgram(this.program);const dual=$('workspace').dataset.layout==='dual',mobile=w<=850;const fittedDistance=this.distance*Math.max(h/Math.max(180,h-(mobile?360:220)),.85*h/(dual?w/2:w));const eye=[Math.sin(this.yaw)*Math.cos(this.pitch)*fittedDistance,Math.cos(this.yaw)*Math.cos(this.pitch)*fittedDistance,Math.sin(this.pitch)*fittedDistance];this.eye=eye;this.view=lookAt(eye);this.mvp=multiply(perspective(w/h),this.view);const offsetX=dual?(this.id==='receptor'?-.5:.5):0,offsetY=mobile?-.03:.04;for(let k=0;k<16;k+=4){this.mvp[k]+=offsetX*this.mvp[k+3];this.mvp[k+1]+=offsetY*this.mvp[k+3];}gl.uniformMatrix4fv(gl.getUniformLocation(this.program,'mvp'),false,this.mvp);gl.uniformMatrix4fv(gl.getUniformLocation(this.program,'view'),false,this.view);gl.drawArrays(gl.TRIANGLES,0,triangles.length);this.marker()}
   project(i){const p=transform(this.mvp,vertices.slice(i*3,i*3+3));return [(p[0]/p[3]+1)*this.canvas.clientWidth/2,(1-p[1]/p[3])*this.canvas.clientHeight/2,p[2]/p[3]]}
   marker(){const cell=this.id==='donor'?donorPeak:selectedCell,el=$(this.id+'-marker');if(cell===null||cell===undefined){el.hidden=true;return}let best=-1,min=Infinity;for(let i=0;i<data.mesh.cells.length;i++){const zone=data.mesh.zones[i];if(this.id==='donor'?!DZ.includes(zone):zone!==selectedZone)continue;const c=data.mesh.cells[i],d=(Math.floor(c/100)-Math.floor(cell/100))**2+4*((c%100)-(cell%100))**2;if(d<min){min=d;best=i}}if(best<0){el.hidden=true;return}const p=this.project(best),normal=data.mesh.normals.slice(best*3,best*3+3),toward=sub(this.eye,vertices.slice(best*3,best*3+3));el.hidden=dot(normal,toward)<0||p[0]<10||p[0]>this.canvas.clientWidth-10||p[1]<30||p[1]>this.canvas.clientHeight-15;if(!el.hidden){el.style.left=p[0]+'px';el.style.top=p[1]+'px'}}
-  pick(e){const rect=this.canvas.getBoundingClientRect(),px=e.clientX-rect.left,py=e.clientY-rect.top;const screen=data.mesh.cells.map((_,i)=>this.project(i));let hit=-1,depth=Infinity;for(let k=0;k<triangles.length;k+=3){const ids=triangles.slice(k,k+3),[a,b,c]=ids.map(i=>screen[i]);const den=(b[1]-c[1])*(a[0]-c[0])+(c[0]-b[0])*(a[1]-c[1]);if(Math.abs(den)<1e-8)continue;const u=((b[1]-c[1])*(px-c[0])+(c[0]-b[0])*(py-c[1]))/den,v=((c[1]-a[1])*(px-c[0])+(a[0]-c[0])*(py-c[1]))/den,t=1-u-v;if(u<0||v<0||t<0)continue;const z=u*a[2]+v*b[2]+t*c[2];if(z<depth){depth=z;const weights=[u,v,t];hit=ids[weights.indexOf(Math.max(...weights))]}}
+  hit(e){const rect=this.canvas.getBoundingClientRect(),px=e.clientX-rect.left,py=e.clientY-rect.top;const screen=data.mesh.cells.map((_,i)=>this.project(i));let hit=-1,depth=Infinity;for(let k=0;k<triangles.length;k+=3){const ids=triangles.slice(k,k+3),[a,b,c]=ids.map(i=>screen[i]);const den=(b[1]-c[1])*(a[0]-c[0])+(c[0]-b[0])*(a[1]-c[1]);if(Math.abs(den)<1e-8)continue;const u=((b[1]-c[1])*(px-c[0])+(c[0]-b[0])*(py-c[1]))/den,v=((c[1]-a[1])*(px-c[0])+(a[0]-c[0])*(py-c[1]))/den,t=1-u-v;if(u<0||v<0||t<0)continue;const z=u*a[2]+v*b[2]+t*c[2];if(z<depth){depth=z;const weights=[u,v,t];hit=ids[weights.indexOf(Math.max(...weights))]}}
+    return hit;
+  }
+  pick(e){const hit=this.hit(e);
     if(hit<0||!RZ.includes(data.mesh.zones[hit]))return;
     selectedZone=data.mesh.zones[hit];const target=data.mesh.cells[hit];let chosen=null,dist=Infinity;for(const key of Object.keys(data.winners)){const cell=Number(key);if(data.grid.labels[cell]!==selectedZone)continue;const d=(Math.floor(cell/100)-Math.floor(target/100))**2+((cell%100)-(target%100))**2;if(d<dist){dist=d;chosen=cell}}if(dist<=16){selectedCell=chosen;update()}else{selectRegion(selectedZone)}
   }
@@ -199,3 +202,36 @@ async function init(){
   }catch(error){$('loading').hidden=false;$('loading').textContent=error.message;console.error(error)}
 }
 init();
+
+// Fondo compartido: el gesto continúa fuera del área inicial y la selección usa la proyección completa.
+const sceneInput=$('scene-input');
+let sceneDrag=null;
+function sceneViewer(e){
+  if(!receptorViewer)return null;
+  if($('workspace').dataset.layout!=='dual')return $('workspace').dataset.modelView==='donor'?donorViewer:receptorViewer;
+  // El donante se dibuja encima cuando las superficies se superponen.
+  if(donorViewer.hit(e)>=0)return donorViewer;
+  if(receptorViewer.hit(e)>=0)return receptorViewer;
+  return e.clientX<sceneInput.clientWidth/2?receptorViewer:donorViewer;
+}
+sceneInput.addEventListener('pointerdown',e=>{
+  const viewer=sceneViewer(e);if(!viewer)return;
+  sceneInput.setPointerCapture(e.pointerId);
+  sceneDrag={viewer,last:[e.clientX,e.clientY],moved:0};
+});
+sceneInput.addEventListener('pointermove',e=>{
+  if(!sceneDrag)return;
+  const dx=e.clientX-sceneDrag.last[0],dy=e.clientY-sceneDrag.last[1];
+  sceneDrag.moved+=Math.hypot(dx,dy);sceneDrag.last=[e.clientX,e.clientY];
+  sceneDrag.viewer.yaw-=dx*.009;sceneDrag.viewer.pitch=clamp(sceneDrag.viewer.pitch+dy*.009,-1.55,1.55);sceneDrag.viewer.draw();
+});
+sceneInput.addEventListener('pointerup',e=>{
+  if(!sceneDrag)return;
+  if(sceneDrag.moved<7&&sceneDrag.viewer.id==='receptor')sceneDrag.viewer.pick(e);
+  sceneDrag=null;
+});
+sceneInput.addEventListener('pointercancel',()=>{sceneDrag=null});
+sceneInput.addEventListener('wheel',e=>{
+  const viewer=sceneViewer(e);if(!viewer)return;e.preventDefault();
+  for(const v of ($('workspace').dataset.layout==='dual'?[receptorViewer,donorViewer]:[viewer])){v.distance=clamp(v.distance*Math.exp(e.deltaY*.001),1.4,8);v.draw()}
+},{passive:false});

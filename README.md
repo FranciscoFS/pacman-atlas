@@ -2,6 +2,8 @@
 
 ## Prototipo inmersivo — 31/10/2026
 
+Tercera pasada: modelos sobre fondo completo, sin recorte por mitad o por tarjeta. Cada canvas usa el viewport entero; proyección desplazada ±0,5 en modo doble, mismo aspecto físico y ajuste inicial por pantalla. Controles sobrepuestos en capa superior. Superficie común de interacción, hit-test sobre geometría proyectada para elegir modelo (donante encima si se solapan), giro con captura de puntero y selección RMSE en coordenadas del fondo. Zoom compartido mantiene ambos dentro del mismo fondo; solo limita el borde de pantalla. QA PC1440×900/móvil390×844, canvas completo, selección puntual0,096→región0,104mm, zoom/giro/reset/1–2/paletas sin errores.
+
 Segunda pasada: selector1/2 modelos simultáneos, con cámara/vista/zoom/reset comunes en modo doble; se ocultan pestañas y controles duplicados. Capas y paleta compartidas. Paletas original, Jet continuo y Blue–White–Red (azul–blanco–rojo), con leyendas generadas por la misma función del mapa. Dos escalas agrupadas (RMSEmm y frecuencia%), datos/contraste/rangos intactos. Al volver a uno se restauran sus controles y leyendas. QA1440×900/390×844/360×740, regiones, cámaras, paletas y retorno1/2; sin erroresJS ni overflow. No publicado.
 
 Rama local prueba-inmersiva, worktree oats_demo/inmersivo. Preview http://localhost:8094/ (servidor Node). Base pública9cc0035 preservada; esta variante no se publica en Pages.

@@ -73,6 +73,15 @@ main{max-width:none;padding:0;height:100svh}
  #shared-legends .legend{width:calc(50% - 8px)}
 }
 @media(max-height:700px) and (max-width:850px){.regions{top:66px}.view-switch,.layout-controls{top:120px}.layer-tools{top:171px}.viewer-card{top:164px;bottom:220px}.viewer-bottom{bottom:160px}.distribution{bottom:207px}body[data-layout="dual"] .layout-controls,body[data-layout="dual"] .shared-camera{top:120px}}
+@media(min-width:851px){
+ body[data-layout="dual"] #shared-legends{bottom:24px;right:28px;width:calc(50% - 42px);gap:20px;padding:12px 18px}
+ body[data-layout="dual"] .results{bottom:24px;left:28px;right:auto;transform:none;width:calc(50% - 42px);grid-template-columns:1fr auto;gap:6px 18px;padding:12px 18px}
+ body[data-layout="dual"] .results .selection .eyebrow{display:none}
+ body[data-layout="dual"] .results .finding{grid-column:1/-1;display:flex;align-items:baseline;gap:12px}
+ body[data-layout="dual"] .results .finding .eyebrow{margin:0}
+ body[data-layout="dual"] .results .finding b{font-size:14px;margin:0}
+ body[data-layout="dual"] .distribution:not([open]){bottom:150px}
+}
 /* Los dos lienzos cubren el mismo fondo; solo cambia la posición proyectada. */
 #workspace[data-layout][data-model-view] .viewer-card{position:absolute;inset:0;width:100%;height:100svh}
 #workspace[data-layout][data-model-view] .viewer-card .canvas-wrap{inset:0;width:100%;height:100%}
